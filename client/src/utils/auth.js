@@ -1,11 +1,16 @@
 import {jwtDecode} from 'jwt-decode';
+import { json } from 'react-router-dom';
 
 class AuthService {
   getProfile() {
-    if (!this.getToken()) {
+    const tokens = this.getToken();
+    console.log('tokens', tokens);
+    if (!tokens?.accessToken) {
+      console.log('returning null in getProfile');
       return null;
     }
-    return jwtDecode(this.getToken());
+    console.log('decoded access token', jwtDecode(JSON.stringify(tokens.accessToken)));
+    return jwtDecode(this.getToken().accessToken);
   }
 
   loggedIn() {
@@ -15,6 +20,7 @@ class AuthService {
   }
 
   isTokenExpired(token) {
+    console.log('token in isTokenExpired', token);
     const decoded = jwtDecode(token);
     if (decoded.exp < Date.now() / 1000) {
       localStorage.removeItem('id_token');
@@ -24,16 +30,28 @@ class AuthService {
   }
 
   getToken() {
-    return localStorage.getItem('id_token');
+    const accessToken =  JSON.parse(localStorage.getItem('accessToken'));
+    const refreshToken =  JSON.parse(localStorage.getItem('refreshToken'));
+    if (!accessToken || !refreshToken) {
+      console.log('returning null in getToken');
+      return null;
+    }
+    return {
+      accessToken,
+      refreshToken
+    }
+
   }
 
-  login(idToken) {
-    localStorage.setItem('id_token', idToken);
+  login(accessToken, refreshToken) {
+    localStorage.setItem('accessToken', JSON.stringify(accessToken));
+    localStorage.setItem('refreshToken', JSON.stringify(refreshToken));
   }
 
   logout() {
-    localStorage.removeItem('id_token');
-    window.location.reload();
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    // window.location.reload();
   }
 }
 

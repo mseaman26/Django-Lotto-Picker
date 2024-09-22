@@ -6,7 +6,7 @@ import { AuthContext } from '../utils/authContext';
 const Login = () => {
     const navigate = useNavigate();
     // Get user and setUser from AuthContext
-    const { user, setToken } = useContext(AuthContext);
+    const { user, setAccessToken, setRefreshToken} = useContext(AuthContext);
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -25,15 +25,20 @@ const Login = () => {
         })
             .then(res => res.json())
             .then(data => {
+                console.log('data', data);
                 if(data.message){
                     return setError(data.message);
                 }
-                if(!data.token){
+                if(!data.access){
                     console.log('No token found in response:', data);
                     return setError('Error signing up. Please try again.');
                 }
-                const newToken = data.token;
-                setToken(newToken);
+                const newAccessToken = data.access;
+                const newRefreshToken = data.refresh;
+                console.log('newAccessToken', newAccessToken);
+                console.log('newRefreshToken', newRefreshToken);
+                setAccessToken(newAccessToken);
+                setRefreshToken(newRefreshToken)
             })
             .catch(err => {
                 console.log(err);
