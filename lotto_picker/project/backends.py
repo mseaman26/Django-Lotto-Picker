@@ -1,4 +1,4 @@
-# backends.py
+# this is a custom backend to authenticate users by email instead of username
 from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth.models import User
 
