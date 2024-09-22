@@ -1,10 +1,12 @@
 //we want this component to be able to send and recieve messages
 import React, { useContext, useState, useEffect } from 'react';
 import { AuthContext } from '../utils/authContext.jsx';
+import { useNavigate } from 'react-router-dom';
 import Auth from '../utils/auth'; 
 import MessagesDisplay from '../components/MessagesDisplay.jsx';
 
 const Home = () => {
+    const navigate = useNavigate();
     const { user, setUser } = useContext(AuthContext);
     const [message, setMessage] = useState('');
     const [messages, setMessages] = useState([]);
@@ -25,6 +27,12 @@ const Home = () => {
         }
     };
 
+    useEffect(() => {
+        if(!user){
+            navigate('/login');
+        }
+    }, [user])
+
 
     return (
         <div style={styles.container}>
@@ -32,7 +40,7 @@ const Home = () => {
 
             <h1 style={styles.heading}>Chat App</h1>
             <p style={styles.welcomeMessage}>
-                Welcome to the hottest new chat app, {user ? user.data.username : ''}!
+                Welcome to the hottest new chat app, {user ? user.username : ''}!
             </p>
            <MessagesDisplay messages={messages} />
 

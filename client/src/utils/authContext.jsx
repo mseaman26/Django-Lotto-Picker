@@ -24,14 +24,22 @@ export const AuthProvider = ({ children }) => {
     //set up useEffect to handle sockets any time token state is altered
     useEffect(() => {
         if(accesToken && !Auth.isTokenExpired(accesToken)){
+            Auth.login(accesToken, refreshToken);
             console.log('we are logged in');
             console.log('logged in with acces token', accesToken);
             console.log('logged in with refresh token', refreshToken);
             console.log('user', Auth.getProfile());
-            console.log('user info: ', getUserById(Auth.getProfile().user_id));
+            getUserById(Auth.getProfile().user_id)
+                .then(data => {
+                    console.log('user data', data);
+                    setUser(data);
+                })
+                .catch(err => {
+                    console.log('error', err);
+                })
             // Auth.login(accesToken);
             // console.log('we are logged in');
-        }
+            }
         // Auth.login(accesToken, refreshToken);
         // console.log('is token expired', Auth.isTokenExpired(accesToken));
         // if(token && !Auth.isTokenExpired(token)){
@@ -51,7 +59,7 @@ export const AuthProvider = ({ children }) => {
 
 
     return (
-        <AuthContext.Provider value={{ user, setUser, setAccessToken, setRefreshToken }}>
+        <AuthContext.Provider value={{ user, setUser, accesToken, setAccessToken, setRefreshToken }}>
             {children}
         </AuthContext.Provider>
     );
