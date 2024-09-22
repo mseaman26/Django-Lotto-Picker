@@ -1,12 +1,20 @@
 from rest_framework import serializers
 from .models import LottoPick
 from django.contrib.auth.models import User
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from django.core.validators import MinLengthValidator
 
 class UserSerializer(serializers.ModelSerializer):
+
+    # prevent password from being returned in response
+    password = serializers.CharField(write_only=True, required=True, validators=[MinLengthValidator(8)])
+
+    email = serializers.EmailField(
+        required=True,
+        error_messages={'invalid': 'Enter a valid email address.'}  # Custom error message for invalid email
+    )
     class Meta:
         model = User
-        fields = ('username', 'email', 'first_name', 'last_name')
+        fields = ( 'username', 'email', 'first_name', 'last_name', 'password')
 
     def create(self, validated_data):
         user = User(
@@ -23,3 +31,4 @@ class LottoPickSerializer(serializers.ModelSerializer):
     class Meta:
         model = LottoPick
         fields = '__all__'
+

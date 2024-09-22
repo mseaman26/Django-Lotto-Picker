@@ -5,37 +5,55 @@ import { AuthContext } from '../utils/authContext';
 
 
 const Signup = () => {
-    const { setToken, user } = useContext(AuthContext);
+    const { user, setAccessToken, setRefreshToken } = useContext(AuthContext);
 
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
+    const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(true);
 
     const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        fetch('/api/users/signup', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ username, email, password })
-        })
-            .then(res => res.json())
-            .then(data => {
-                if (data.message) {
-                    return setError(data.message);
-                }
-                const newToken = data.token;
-                setToken(newToken);
-            })
-            .catch(err => {
-                console.error(err);
-                setError('Error signing up. Please try again.');
+        try{
+            const res = await fetch('/api/users/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, email, password, first_name: '', last_name: ''})
             });
+            if (!res.ok) {
+                const errors = await res.json();    
+                setErrors(errors);
+                console.error('signup errors', errors);
+                throw new Error('Error signing up: ', errors);
+                
+            }
+            const data = await res.json();
+            console.log('data', data);
+            const tokenRes = await fetch('/api/token/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username: email, password })
+            })
+            if (!tokenRes.ok) {
+                setErrors(tokenRes);
+                throw new Error('Error getting token. Please try again.');
+            }
+            const tokenData = await tokenRes.json();
+            console.log('tokenData', tokenData);
+            const newAccessToken = tokenData.access;
+            const newRefreshToken = tokenData.refresh;
+            setAccessToken(newAccessToken);
+            setRefreshToken(newRefreshToken);
+        }catch(err){
+            console.error(err);
+        }
     };
 
     useEffect(() => {
@@ -46,10 +64,20 @@ const Signup = () => {
         }
     }, [user]);
 
+    useEffect(() => {
+        console.log('errors', errors);
+    }, [errors]);
+
+    useEffect(() => {
+        setErrors({});
+    }, [username, email, password]);
+
     return (
         <div style={styles.container}>
             <h1>Sign Up</h1>
+            {errors.detail && <p style={{color: 'red'}}>{errors.detail}</p>}
             <form onSubmit={handleSubmit} style={styles.form}>
+                {errors.username && <p style={{color: 'red'}}>{errors.username}</p>}
                 <input
                     type="text"
                     placeholder="Username (display name)"
@@ -57,6 +85,7 @@ const Signup = () => {
                     onChange={(e) => setUsername(e.target.value)}
                     style={styles.input}
                 />
+                {errors.email && <p style={{color: 'red'}}>{errors.email}</p>}
                 <input
                     type="email"
                     placeholder="Email"
@@ -64,6 +93,7 @@ const Signup = () => {
                     onChange={(e) => setEmail(e.target.value)}
                     style={styles.input}
                 />
+                {errors.password && <p style={{color: 'red'}}>{errors.password}</p>}
                 <input
                     type="password"
                     placeholder="Password"
@@ -83,7 +113,6 @@ const Signup = () => {
             <div style={styles.linkContainer}>
                 <p>Already have an account? <Link to="/login" style={styles.link}>Log In</Link></p>
             </div>
-            <h1>{error}</h1>
         </div>
     );
 }

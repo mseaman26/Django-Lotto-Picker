@@ -11,39 +11,36 @@ const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
+    const [errors, setErrors] = useState({});
 
     // Handle form submission
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        fetch('api/token/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ username: email, password })
-        })
-            .then(res => res.json())
-            .then(data => {
-                console.log('data', data);
-                if(data.message){
-                    return setError(data.message);
-                }
-                if(!data.access){
-                    console.log('No token found in response:', data);
-                    return setError('Error signing up. Please try again.');
-                }
-                const newAccessToken = data.access;
-                const newRefreshToken = data.refresh;
-                console.log('newAccessToken', newAccessToken);
-                console.log('newRefreshToken', newRefreshToken);
-                setAccessToken(newAccessToken);
-                setRefreshToken(newRefreshToken)
+        try{
+            const res = await fetch('api/token/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username: email, password })
             })
-            .catch(err => {
-                console.log(err);
-                setError('Error signing up. Please try again.');
-            });
+            if (!res.ok) {
+                const errors = await res.json();
+                console.log('errors', errors);
+                return setErrors(errors);
+            }
+            const data = await res.json();
+            console.log('data', data);
+            const newAccessToken = data.access;
+            const newRefreshToken = data.refresh;
+            setAccessToken(newAccessToken);
+            setRefreshToken(newRefreshToken);
+        }catch(err){
+            console.error(err);
+
+        }
+        
+       
     };
 
     // if user is logged in, redirect to home page
@@ -55,6 +52,10 @@ const Login = () => {
         }
     }, [user]);
 
+    useEffect(() => {
+        setErrors({});
+    }, [email, password]);
+
     if (loading) {
         // Optionally show a spinner or placeholder while loading
         return <div>Loading...</div>;
@@ -63,7 +64,9 @@ const Login = () => {
     return (
         <div style={styles.container}>
             <h1>Login</h1>
+            {errors.detail && <p style={{color: 'red'}}>{errors.detail}</p>}
             <form onSubmit={handleSubmit} style={styles.form}>
+                {errors.username && <p style={{color: 'red'}}>{errors.username}</p>}
                 <input
                     type="email"
                     placeholder="Email"
@@ -71,6 +74,7 @@ const Login = () => {
                     onChange={(e) => setEmail(e.target.value)}
                     style={styles.input}
                 />
+                {errors.password && <p style={{color: 'red'}}>{errors.password}</p>}
                 <input
                     type="password"
                     placeholder="Password"
@@ -90,7 +94,6 @@ const Login = () => {
             <div style={styles.linkContainer}>
                 <p>Don't have an account? <Link to="/signup" style={styles.link}>Sign Up</Link></p>
             </div>
-            <h1>{error}</h1>
         </div>
     );
 }
