@@ -7,7 +7,7 @@ import MessagesDisplay from '../components/MessagesDisplay.jsx';
 
 const Home = () => {
     const navigate = useNavigate();
-    const { user, setUser } = useContext(AuthContext);
+    const { user, setUser, authLoading } = useContext(AuthContext);
     const [message, setMessage] = useState('');
     const [messages, setMessages] = useState([]);
 
@@ -28,12 +28,17 @@ const Home = () => {
     };
 
     useEffect(() => {
-        if(!user){
+        console.log("Auth loading:", authLoading);
+        console.log("User:", user);
+        if(!authLoading && !user){
+            console.log("Redirecting to login");
             navigate('/login');
         }
-    }, [user])
+    }, [authLoading, user, navigate]);
 
-
+    if (authLoading) {
+        return <p>Loading...</p>;
+    }
     return (
         <div style={styles.container}>
             

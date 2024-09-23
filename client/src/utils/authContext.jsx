@@ -1,6 +1,6 @@
 import { createContext , useState, useEffect} from "react";
 import Auth from "./auth";
-import { getUserById } from './apiHelpers'
+import { getUserById, refreshTokenAPI } from './apiHelpers'
 //import socket.io-client
 
 export const AuthContext = createContext();
@@ -10,26 +10,23 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [accesToken, setAccessToken] = useState(null);
     const [refreshToken, setRefreshToken] = useState(null);
+    const [authLoading, setAuthLoading] = useState(true);
 
 
     useEffect(() => {
-        const savedToken = Auth.getToken();
-        // console.log('saved token', savedToken);
-        // if(savedToken?.accessToken && !Auth.isTokenExpired(savedToken?.accessToken)){
-        //     setUser(Auth.getProfile());
-        //     setAccessToken(savedToken);
-        // }
+        const savedAccessToken = JSON.parse(localStorage.getItem('accessToken'));
+        const savedRefreshToken = JSON.parse(localStorage.getItem('refreshToken'));
+        if(savedAccessToken){
+            setAccessToken(savedAccessToken);
+            setRefreshToken(savedRefreshToken);
+        }
     }, [])
 
-    //set up useEffect to handle sockets any time token state is altered
     useEffect(() => {
-        if(accesToken && !Auth.isTokenExpired(accesToken)){
-            Auth.login(accesToken, refreshToken);
-            console.log('we are logged in');
-            console.log('logged in with acces token', accesToken);
-            console.log('logged in with refresh token', refreshToken);
-            console.log('user', Auth.getProfile());
-            getUserById(Auth.getProfile().user_id)
+        if(accesToken ){
+            if(!Auth.isTokenExpired(accesToken)){
+                Auth.login(accesToken, refreshToken);
+                getUserById(Auth.getProfile().user_id)
                 .then(data => {
                     console.log('user data', data);
                     setUser(data);
@@ -37,29 +34,40 @@ export const AuthProvider = ({ children }) => {
                 .catch(err => {
                     console.log('error', err);
                 })
-            // Auth.login(accesToken);
-            // console.log('we are logged in');
+                .finally(() => {
+                    setAuthLoading(false);
+                })
             }
-        // Auth.login(accesToken, refreshToken);
-        // console.log('is token expired', Auth.isTokenExpired(accesToken));
-        // if(token && !Auth.isTokenExpired(token)){
-        //     //using the function form of setUser to avoid stale closure
-        //     setUser(() => Auth.getProfile());
-        //     Auth.login(token);
-        //     //initialize up socket connection
-        
-        // }
+            else{
+                //if access token is expired, call refresh token api
+                refreshTokenAPI(refreshToken)
+                .then(data => {
+                    console.log('refresh token data', data);
+                    Auth.login(data.accessToken, data.refreshToken);
+                    setAccessToken(data.access);
+                    setRefreshToken(data.refresh);
+                    Auth.login(data.accessToken, data.refreshToken);
+                    getUserById(Auth.getProfile().user_id)
+                    .then(data => {
+                        console.log('user data', data);
+                        setUser(data);
+                    })
+                    .catch(err => {
+                        console.log('error', err);
+                    })
+                    .finally(() => {
+                        setAuthLoading(false);
+                    })
+                })
+                .catch(err => {
+                    console.log('error', err);
+                })
+            } 
+        }
     }, [accesToken])
 
-    useEffect(() => {
-        console.log('access token', accesToken);
-        console.log('refresh token', refreshToken);
-    }, [accesToken, refreshToken])
-
-
-
     return (
-        <AuthContext.Provider value={{ user, setUser, accesToken, setAccessToken, setRefreshToken }}>
+        <AuthContext.Provider value={{ user, setUser, accesToken, setAccessToken, setRefreshToken, authLoading }}>
             {children}
         </AuthContext.Provider>
     );

@@ -37,7 +37,9 @@ const Login = () => {
             setRefreshToken(newRefreshToken);
         }catch(err){
             console.error(err);
-
+        }finally{
+            // Redirect to home page
+            setLoading(false);
         }
         
        

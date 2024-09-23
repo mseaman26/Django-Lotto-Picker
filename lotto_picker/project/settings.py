@@ -108,7 +108,7 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),  # Example: 5 minutes
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=2),  # Example: 5 minutes
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7), 
     'SIGNING_KEY': 'your-secret-key-here',  # Specify your secret key
     'ROTATE_REFRESH_TOKENS': True,
